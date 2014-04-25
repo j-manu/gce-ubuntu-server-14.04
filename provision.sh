@@ -1,6 +1,8 @@
 #!/bin/bash
 
-run_provisioning(){
+echo "Starting sudo"
+echo |sudo -S bash <<'EOF'
+  "Th3reIsNoSp00n!"
   echo "Running provisioner"
   apt-get update && apt-get upgrade -yq
   rm -rf /etc/hostname
@@ -22,11 +24,4 @@ run_provisioning(){
   rm -rf /etc/ssh/ssh_host_ecdsa_key*
   usermod -L root
   echo 1 > /proc/sys/kernel/modules_disabled
-}
-
-if [ "$#" -eq 0 ];then
-  echo "Starting sudo"
-  echo "Th3reIsNoSp00n!"|sudo -S bash /home/bootstrap/provision.sh run
-else
-  run_provisioning
-fi
+EOF
