@@ -12,7 +12,7 @@ wget https://github.com/GoogleCloudPlatform/compute-image-packages/releases/down
 dpkg -i python-gcimagebundle_1.1.2-1_all.deb
 apt-get install -f -yq
 wget https://github.com/GoogleCloudPlatform/compute-image-packages/releases/download/1.1.2/google-compute-daemon_1.1.2-1_all.deb
-dpkg -i python-gcimagebundle_1.1.2-1_all.deb
+dpkg -i google-compute-daemon_1.1.2-1_all.deb
 apt-get install -f -yq
 
 rm -rf /etc/ssh/ssh_host_key
