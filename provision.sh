@@ -133,3 +133,15 @@ pushd google-cloud-sdk
 CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --path-update=true --bash-completion=true --rc-path=/etc/bash.bashrc
 popd
 popd
+
+
+# Some quick hacks
+sed -i -e "/exit 0/d" /etc/rc.local
+cat >>/etc/rc.local <<EOF
+# Delete bootstrap user
+nohup -- userdel -f -r bootstrap 2>&1 >/dev/null &
+# Set hostname
+hostname \`/usr/share/google/get_metadata_value hostname\`
+
+exit 0
+EOF
