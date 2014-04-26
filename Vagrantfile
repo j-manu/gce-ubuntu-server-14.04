@@ -1,141 +1,78 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-
 $script = <<SCRIPT
 echo I am provisioning...
-apt-get update && apt-get upgrade -yq
-apt-get install qemu-kvm unzip -yq
+apt-get update && apt-get -qy upgrade
+apt-get install -qy qemu-kvm unzip
 modprobe kvm-intel
 mkdir -p packer && pushd packer
-  wget https://dl.bintray.com/mitchellh/packer/0.5.2_linux_amd64.zip
+  wget -q https://dl.bintray.com/mitchellh/packer/0.5.2_linux_amd64.zip
   unzip 0.5.2_linux_amd64.zip
 popd
 date > /etc/vagrant_provisioned_at
+cat >/usr/bin/gcx_build_vm <<GCXBUILDVM
+#!/bin/bash
+
+cd /vagrant
+echo 'Downloading ubuntu-14.04-server-amd64.iso...'
+wget -c http://releases.ubuntu.com/14.04/ubuntu-14.04-server-amd64.iso -O ubuntu-14.04-server-amd64.iso
+echo
+echo
+echo 'Done. Now building VM...'
+sleep 2
+rm -rf /vagrant/output_*
+/home/vagrant/packer/packer build vm.json
+echo
+echo
+echo 'Done building VM using packer. Building image archive...'
+cd /vagrant/output_*
+mv *.raw disk.raw
+tar -zcf ubuntu-14.04-image.tar.gz disk.raw
+echo
+echo 'Done! You are now leaving vagrant to upload your new Ubuntu image using gsutil.'
+echo '* OPTIONAL: create a new bucket: gsutil mb gs://<bucket-name>'
+echo '* gsutil cp output_*/ubuntu-14.04-image.tar.gz gs://<bucket-name>'
+echo '* gcutil --project=<your-project> addimage ubuntu-14-04 gs://<bucket-name>/ubuntu-14.04-image.tar.gz'
+echo
+echo 'Do not forget to clean up vagrant leftovers using "vagrant destroy".'
+sleep 3
+poweroff
+GCXBUILDVM
+chmod +x /usr/bin/gcx_build_vm
+echo "sudo /usr/bin/gcx_build_vm" >>/home/vagrant/.bashrc
+rm /etc/update-motd.d/00-header
+rm /etc/update-motd.d/10-help-text
+rm /etc/update-motd.d/91-release-upgrade
+echo -e '#!/bin/sh\n\ncat /etc/motd' >/etc/update-motd.d/99-grandcentrix
+cat >/etc/motd <<MOTD
+[1;32;40m                                .___[1;33;40m                   __         .__        [0m
+[1;32;40m   ________________    ____   __| _/[1;33;40m[1;33;40m____  ____   _____/  |________|_____  ___[0m
+[1;32;40m  / ___\\_  __ \\__  \\  /    \\ / __ _/[1;33;40m[1;33;40m ____/ __ \\ /    \\   __\\_  __ |  \\  \\/  /[0m
+[1;32;40m / /_/  |  | \\// __ \\|   |  / /_/ [1;33;40m[1;33;40m\\  \\__\\  ___/|   |  |  |  |  | \\|  |>    < [0m
+[1;32;40m \\___  /|__|  (____  |___|  \\____ |[1;33;40m[1;33;40m\\___  \\___  |___|  |__|  |__|  |__/__/\\_ \\[0m
+[1;32;40m/_____/            \\/     \\/     \\/[1;33;40m[1;33;40m    \\/    \\/     \\/   [0mgrandcentrix.net  [1;33;40m\\/[0m
+                                                         GCE image builder
+
+MOTD
+chmod +x /etc/update-motd.d/99-grandcentrix
+/etc/update-motd.d/99-grandcentrix >/var/run/motd
+echo
+echo
+echo 'Done. Continue with "vagrant ssh".'
 SCRIPT
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'vmware_fusion'
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
-
-  # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "chef/ubuntu-14.04"
-
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
-
-  # If true, then any SSH connections made will enable agent forwarding.
-  # Default value: false
-  # config.ssh.forward_agent = true
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Don't boot with headless mode
-  #   vb.gui = true
-  #
-  #   # Use VBoxManage to customize the VM. For example to change memory:
-  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
-  # end
-  #
-  # View the documentation for the provider you're using for more
-  # information on available options.
-
-  # Enable provisioning with CFEngine. CFEngine Community packages are
-  # automatically installed. For example, configure the host as a
-  # policy server and optionally a policy file to run:
-  #
-  # config.vm.provision "cfengine" do |cf|
-  #   cf.am_policy_hub = true
-  #   # cf.run_file = "motd.cf"
-  # end
-  #
-  # You can also configure and bootstrap a client to an existing
-  # policy server:
-  #
-  # config.vm.provision "cfengine" do |cf|
-  #   cf.policy_server_address = "10.0.2.15"
-  # end
-
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file default.pp in the manifests_path directory.
-  #
-  # config.vm.provision "puppet" do |puppet|
-  #   puppet.manifests_path = "manifests"
-  #   puppet.manifest_file  = "site.pp"
-  # end
-
-  # Enable provisioning with chef solo, specifying a cookbooks path, roles
-  # path, and data_bags path (all relative to this Vagrantfile), and adding
-  # some recipes and/or roles.
-  #
-  # config.vm.provision "chef_solo" do |chef|
-  #   chef.cookbooks_path = "../my-recipes/cookbooks"
-  #   chef.roles_path = "../my-recipes/roles"
-  #   chef.data_bags_path = "../my-recipes/data_bags"
-  #   chef.add_recipe "mysql"
-  #   chef.add_role "web"
-  #
-  #   # You may also specify custom JSON attributes:
-  #   chef.json = { :mysql_password => "foo" }
-  # end
-
-  # Enable provisioning with chef server, specifying the chef server URL,
-  # and the path to the validation key (relative to this Vagrantfile).
-  #
-  # The Opscode Platform uses HTTPS. Substitute your organization for
-  # ORGNAME in the URL and validation key.
-  #
-  # If you have your own Chef Server, use the appropriate URL, which may be
-  # HTTP instead of HTTPS depending on your configuration. Also change the
-  # validation key to validation.pem.
-  #
-  # config.vm.provision "chef_client" do |chef|
-  #   chef.chef_server_url = "https://api.opscode.com/organizations/ORGNAME"
-  #   chef.validation_key_path = "ORGNAME-validator.pem"
-  # end
-  #
-  # If you're using the Opscode platform, your validator client is
-  # ORGNAME-validator, replacing ORGNAME with your organization name.
-  #
-  # If you have your own Chef Server, the default validation client name is
-  # chef-validator, unless you changed the configuration.
-  #
-  #   chef.validation_client_name = "ORGNAME-validator"
   config.vm.provider "vmware_fusion" do |v|
     v.vmx["memsize"] = "4096"
     v.vmx["numvcpus"] = "2"
+    v.vmx["vhv.enable"] = "TRUE" # Enable nested virtualization for qemu-kvm
   end
   config.vm.provision "shell", inline: $script
-
 end
