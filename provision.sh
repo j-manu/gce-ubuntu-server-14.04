@@ -134,14 +134,28 @@ CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --pa
 popd
 popd
 
+# Upstart scripts
+cat >>/etc/init/gcx-set-hostname.conf <<EOF
+start on (starting ssh or starting sshd)
 
-# Some quick hacks
-sed -i -e "/exit 0/d" /etc/rc.local
-cat >>/etc/rc.local <<EOF
-# Delete bootstrap user
-nohup -- userdel -f -r bootstrap 2>&1 >/dev/null &
-# Set hostname
-hostname \`/usr/share/google/get_metadata_value hostname\`
+# this is a task, so only run once
+task
 
-exit 0
+script
+  # set hostname to the one returned by the google metadata server
+  hostname \`/usr/share/google/get_metadata_value hostname\`
+end script
 EOF
+cat >>/etc/init/gcx-remove-bootstrap.conf <<EOF
+start on (starting ssh or starting sshd)
+
+# this is a task, so only run once
+task
+
+script
+  # delete bootstrap user
+  userdel -f -r bootstrap
+  rm /etc/init/gcx-remove-bootstrap.conf
+end script
+EOF
+initctl reload-configuration
