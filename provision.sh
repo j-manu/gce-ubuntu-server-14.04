@@ -48,14 +48,63 @@ rm -f /etc/ssh/ssh_host_key
 rm -f /etc/ssh/ssh_host_*_key*
 
 # Reconfigure sshd
-sed -i -e "s/PermitRootLogin without-password/PermitRootLogin no/" /etc/ssh/sshd_config
-sed -i -e "s/#PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
-sed -i -e "s/X11Forwarding yes/X11Forwarding no" /etc/ssh/sshd_config
+cat >/etc/ssh/sshd_config <<EOF
+Port 22
+Protocol 2
 
-echo "PermitTunnel no" >>/etc/ssh/sshd_config
-echo "AllowTcpForwarding yes" >>/etc/ssh/sshd_config
-echo "ClientAliveInterval 420" >>/etc/ssh/sshd_config
-echo "UseDNS no" >>/etc/ssh/sshd_config
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 1024
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+UsePAM yes
+
+# GCE Recommended config
+
+# Disable PasswordAuthentication as ssh keys are more secure.
+PasswordAuthentication no
+
+# Disable root login, using sudo provides better auditing.
+PermitRootLogin no
+
+PermitTunnel no
+AllowTcpForwarding yes
+X11Forwarding no
+
+# Compute times out connections after 10 minutes of inactivity.  Keep alive
+# ssh connections by sending a packet every 7 minutes.
+ClientAliveInterval 420
+
+# Custom Config
+UseDNS no
+PrintMotd no
+PrintLastLog no
+EOF
 
 # Creating /etc/ssh/sshd_not_to_be_run will disable starting of sshd by default.
 # Google startup scripts will check for this value (GOOGLE)  and start sshd
