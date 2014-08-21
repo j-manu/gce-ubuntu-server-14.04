@@ -5,6 +5,8 @@
 
 echo "Running provisioner"
 
+GCE_IMAGE_VERSION=1.1.6
+
 # Update APT cache, upgrade packages
 apt-get update && apt-get -yq dist-upgrade
 
@@ -20,15 +22,12 @@ echo "server 169.254.169.254" >>/etc/ntp.conf
 apt-get install -yq openssh-server python2.7 python2.7-dev python-pip vim htop unzip fail2ban curl ethtool kpartx
 
 # Install GCE specific software
-wget -q https://github.com/GoogleCloudPlatform/compute-image-packages/releases/download/1.1.2/google-startup-scripts_1.1.2-1_all.deb
-dpkg -i google-startup-scripts_1.1.2-1_all.deb
-apt-get install -f -yq
-wget -q https://github.com/GoogleCloudPlatform/compute-image-packages/releases/download/1.1.2/python-gcimagebundle_1.1.2-1_all.deb
-dpkg -i python-gcimagebundle_1.1.2-1_all.deb
-apt-get install -f -yq
-wget -q https://github.com/GoogleCloudPlatform/compute-image-packages/releases/download/1.1.2/google-compute-daemon_1.1.2-1_all.deb
-dpkg -i google-compute-daemon_1.1.2-1_all.deb
-apt-get install -f -yq
+for pkg in google-startup-scripts python-gcimagebundle google-compute-daemon
+do
+  wget -q "https://github.com/GoogleCloudPlatform/compute-image-packages/releases/download/${GCE_IMAGE_VERSION}/${pkg}_${GCE_IMAGE_VERSION}-1_all.deb" -O ${pkg}-${GCE_IMAGE_VERSION}.deb
+  dpkg -i ${pkg}-${GCE_IMAGE_VERSION}.deb
+done
+apt-get -f -yq install
 
 # Remove sshd host keys
 rm -f /etc/ssh/ssh_host_key
