@@ -182,4 +182,4 @@ respawn
 exec /sbin/getty -L 115200 ttyS0 vt102
 EOF
 
-initctl reload-configuration
+echo "Finished configuring"
