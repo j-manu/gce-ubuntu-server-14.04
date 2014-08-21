@@ -14,6 +14,9 @@ apt-get update && apt-get -yq dist-upgrade
 rm /etc/hostname
 echo -e "127.0.0.1 localhost\n169.254.169.254 metadata.google.internal metadata" > /etc/hosts
 
+# Set up UTC timezone
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+
 # Setting up ntp
 sed -i -e "/server/d" /etc/ntp.conf
 echo "server 169.254.169.254" >>/etc/ntp.conf
