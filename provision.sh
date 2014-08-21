@@ -111,7 +111,28 @@ CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --pa
 popd
 popd
 
+# Log syslog messages to /dev/ttyS0
+cat >/etc/default/grub <<EOF
+RUB_DEFAULT=0
+GRUB_TIMEOUT=0
+GRUB_HIDDEN_TIMEOUT=0
+GRUB_HIDDEN_TIMEOUT_QUIET=true
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="console=ttyS0"
+GRUB_CMDLINE_LINUX="console=ttyS0,115200n8 ignore_loglevel"
+GRUB_TERMINAL=console
+EOF
+update-grub
+
 # Upstart scripts
+cat >/etc/init/ttyS0.conf <<EOF
+# ttyS0 - getty
+start on stopped rc or RUNLEVEL=[2345]
+stop on runlevel [!2345]
+respawn
+exec /sbin/getty -L 115200 ttyS0 vt102
+EOF
+
 cat >>/etc/init/gcx-remove-bootstrap.conf <<EOF
 start on (starting ssh or starting sshd)
 
