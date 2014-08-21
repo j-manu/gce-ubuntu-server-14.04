@@ -37,10 +37,15 @@ rm -f /etc/ssh/ssh_host_*_key*
 sed -i -e "s/PermitRootLogin without-password/PermitRootLogin no/" /etc/ssh/sshd_config
 sed -i -e "s/#PasswordAuthentication yes/PasswordAuthentication no/" /etc/ssh/sshd_config
 sed -i -e "s/X11Forwarding yes/X11Forwarding no" /etc/ssh/sshd_config
+
 echo "PermitTunnel no" >>/etc/ssh/sshd_config
 echo "AllowTcpForwarding yes" >>/etc/ssh/sshd_config
 echo "ClientAliveInterval 420" >>/etc/ssh/sshd_config
 echo "UseDNS no" >>/etc/ssh/sshd_config
+
+# Creating /etc/ssh/sshd_not_to_be_run will disable starting of sshd by default.
+# Google startup scripts will check for this value (GOOGLE)  and start sshd
+# after creating new host keys
 echo "GOOGLE" >/etc/ssh/sshd_not_to_be_run
 
 cat >/etc/ssh/ssh_config <<EOF
