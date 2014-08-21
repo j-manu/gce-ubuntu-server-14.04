@@ -182,16 +182,4 @@ respawn
 exec /sbin/getty -L 115200 ttyS0 vt102
 EOF
 
-cat >>/etc/init/gcx-remove-bootstrap.conf <<EOF
-start on (starting ssh or starting sshd)
-
-# this is a task, so only run once
-task
-
-script
-  # delete bootstrap user
-  userdel -f -r bootstrap
-  rm /etc/init/gcx-remove-bootstrap.conf
-end script
-EOF
 initctl reload-configuration
