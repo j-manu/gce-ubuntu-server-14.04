@@ -35,8 +35,8 @@ popd
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 # Setting up ntp
-sed -i -e "/server/d" /etc/ntp.conf
-echo "server 169.254.169.254" >>/etc/ntp.conf
+sed -i -e "/^server/d" /etc/ntp.conf
+echo "server metadata.google.internal" >> /etc/ntp.conf
 
 # Removing hostname, adding internal hosts
 rm /etc/hostname
