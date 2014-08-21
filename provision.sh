@@ -10,10 +10,6 @@ GCE_IMAGE_VERSION=1.1.6
 # Update APT cache, upgrade packages
 apt-get update && apt-get -yq dist-upgrade
 
-# Removing hostname, adding internal hosts
-rm /etc/hostname
-echo -e "127.0.0.1 localhost\n169.254.169.254 metadata.google.internal metadata" > /etc/hosts
-
 # Set up UTC timezone
 ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
@@ -31,6 +27,11 @@ do
   dpkg -i ${pkg}-${GCE_IMAGE_VERSION}.deb
 done
 apt-get -f -yq install
+
+# Removing hostname, adding internal hosts
+rm /etc/hostname
+echo -e "127.0.0.1 localhost\n169.254.169.254 metadata.google.internal metadata" > /etc/hosts
+ln -s /usr/share/google/set-hostname /etc/dhcp/dhclient-exit-hooks.d/
 
 # Remove sshd host keys
 rm -f /etc/ssh/ssh_host_key
@@ -142,17 +143,6 @@ popd
 popd
 
 # Upstart scripts
-cat >>/etc/init/gcx-set-hostname.conf <<EOF
-start on (starting ssh or starting sshd)
-
-# this is a task, so only run once
-task
-
-script
-  # set hostname to the one returned by the google metadata server
-  hostname \`/usr/share/google/get_metadata_value hostname\`
-end script
-EOF
 cat >>/etc/init/gcx-remove-bootstrap.conf <<EOF
 start on (starting ssh or starting sshd)
 
