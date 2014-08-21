@@ -10,13 +10,6 @@ GCE_IMAGE_VERSION=1.1.6
 # Update APT cache, upgrade packages
 apt-get update && apt-get -yq dist-upgrade
 
-# Set up UTC timezone
-ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-
-# Setting up ntp
-sed -i -e "/server/d" /etc/ntp.conf
-echo "server 169.254.169.254" >>/etc/ntp.conf
-
 # Install mandatory software
 apt-get install -yq openssh-server python2.7 python2.7-dev python-pip vim htop unzip fail2ban curl ethtool kpartx
 
@@ -27,6 +20,23 @@ do
   dpkg -i ${pkg}-${GCE_IMAGE_VERSION}.deb
 done
 apt-get -f -yq install
+
+# Install gcloud utilities
+mkdir -p /opt/google
+pushd /opt/google
+wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip
+unzip google-cloud-sdk.zip
+pushd google-cloud-sdk
+CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --path-update=true --bash-completion=true --rc-path=/etc/bash.bashrc
+popd
+popd
+
+# Set up UTC timezone
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+
+# Setting up ntp
+sed -i -e "/server/d" /etc/ntp.conf
+echo "server 169.254.169.254" >>/etc/ntp.conf
 
 # Removing hostname, adding internal hosts
 rm /etc/hostname
@@ -100,16 +110,6 @@ kernel.yama.ptrace_scope=1
 # set perf only available to root
 kernel.perf_event_paranoid=2
 EOF
-
-# Install gcloud utilities
-mkdir -p /opt/google
-pushd /opt/google
-wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip
-unzip google-cloud-sdk.zip
-pushd google-cloud-sdk
-CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --path-update=true --bash-completion=true --rc-path=/etc/bash.bashrc
-popd
-popd
 
 # Log syslog messages to /dev/ttyS0
 cat >/etc/default/grub <<EOF
