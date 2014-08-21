@@ -5,7 +5,9 @@
 
 echo "Running provisioner"
 
-GCE_IMAGE_VERSION=1.1.6
+# The newer versions (including 1.1.6) are broken in Ubuntu.
+# sshd will not be started on boot
+GCE_IMAGE_VERSION=1.1.3
 
 # Update APT cache, upgrade packages
 apt-get update && apt-get -yq dist-upgrade
