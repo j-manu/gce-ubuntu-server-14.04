@@ -24,7 +24,7 @@ apt-get -f -yq install
 # Install gcloud utilities
 mkdir -p /opt/google
 pushd /opt/google
-wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip
+wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip -O google-cloud-sdk.zip
 unzip google-cloud-sdk.zip
 pushd google-cloud-sdk
 CLOUDSDK_CORE_DISABLE_PROMPTS=1 ./install.sh --disable-installation-options --path-update=true --bash-completion=true --rc-path=/etc/bash.bashrc
