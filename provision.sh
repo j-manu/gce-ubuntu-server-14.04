@@ -77,59 +77,28 @@ echo 1 > /proc/sys/kernel/modules_disabled
 rm /boot/System.map*
 
 # Fix sysctl values
-cat >/etc/sysctl.conf <<EOF
+cat >/etc/sysctl.d/49-disable-ipv6.conf <<EOF
 # Disable IPv6 as it is still unsupported on GCE, even though it's 2014 already
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
 
-# Google-recommended kernel parameters
+cat >/etc/sysctl.d/50-gce-recommended.conf <<EOF
+# provides protection from ToCToU races
+fs.protected_hardlinks=1
 
-# Turn on SYN-flood protections.  Starting with 2.6.26, there is no loss
-# of TCP functionality/features under normal conditions.  When flood
-# protections kick in under high unanswered-SYN load, the system
-# should remain more stable, with a trade off of some loss of TCP
-# functionality/features (e.g. TCP Window scaling).
-net.ipv4.tcp_syncookies=1
+# provides protection from ToCToU races
+fs.protected_symlinks=1
 
-# Ignore source-routed packets
-net.ipv4.conf.all.accept_source_route=0
-net.ipv4.conf.default.accept_source_route=0
+# makes locating kernel addresses more difficult
+kernel.kptr_restrict=1
 
-# Ignore ICMP redirects from non-GW hosts
-net.ipv4.conf.all.accept_redirects=0
-net.ipv4.conf.default.accept_redirects=0
-net.ipv4.conf.all.secure_redirects=1
-net.ipv4.conf.default.secure_redirects=1
+# set ptrace protections
+kernel.yama.ptrace_scope=1
 
-# Don't pass traffic between networks or act as a router
-net.ipv4.ip_forward=0
-net.ipv4.conf.all.send_redirects=0
-net.ipv4.conf.default.send_redirects=0
-
-# Turn on Source Address Verification in all interfaces to
-# prevent some spoofing attacks.
-net.ipv4.conf.all.rp_filter=1
-net.ipv4.conf.default.rp_filter=1
-
-# Ignore ICMP broadcasts to avoid participating in Smurf attacks
-net.ipv4.icmp_echo_ignore_broadcasts=1
-
-# Ignore bad ICMP errors
-net.ipv4.icmp_ignore_bogus_error_responses=1
-
-# Log spoofed, source-routed, and redirect packets
-net.ipv4.conf.all.log_martians=1
-net.ipv4.conf.default.log_martians=1
-
-# RFC 1337 fix
-net.ipv4.tcp_rfc1337=1
-
-# Addresses of mmap base, heap, stack and VDSO page are randomized
-kernel.randomize_va_space=2
-
-# Reboot the machine soon after a kernel panic.
-kernel.panic=10
+# set perf only available to root
+kernel.perf_event_paranoid=2
 EOF
 
 # Install gcloud utilities
