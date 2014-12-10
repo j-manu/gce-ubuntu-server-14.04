@@ -3,6 +3,8 @@
 # Nice reference: https://developers.google.com/compute/docs/images#buildingimage
 # Would be even nicer if Google would use it in their own debian images.
 
+set -eou pipefail
+
 echo "Running provisioner"
 
 GCE_IMAGE_VERSION=1.2.1
