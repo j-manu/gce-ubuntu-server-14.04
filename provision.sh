@@ -13,7 +13,7 @@ GCE_IMAGE_VERSION=1.2.1
 apt-get update && apt-get -yq dist-upgrade
 
 # Install mandatory software
-apt-get install -yq openssh-server vim unzip curl ntp
+apt-get install -yq openssh-server vim unzip curl ntp kpartx ethtool
 
 # Install GCE specific software
 for pkg in google-startup-scripts python-gcimagebundle google-compute-daemon
